@@ -6,9 +6,12 @@ SoundCloud) + auto-sort playlist (genre/artist/album/mood) + music discovery + i
 lagu/album/artist.
 
 ## Repo State
-- Belum ada kode: repo isinya hanya `AGENTS.md` + `.opencode/skills/platform-api-integration/SKILL.md`.
-  Folder `/api`, `/workers`, `/models`, `/frontend` belum dibuat — ikuti section Conventions saat scaffold.
-- Commands di bawah adalah target workflow, belum bisa dijalankan sebelum scaffolding.
+- Scaffold dasar sudah ada: `/api` (FastAPI), `/workers` (Celery), `/models` (SQLAlchemy),
+  `alembic/` (migration awal: users, playlists, tracks, playlist_tracks,
+  platform_credentials), `/frontend` (placeholder saja).
+- Belum ada implementasi platform API / OAuth / Celery task konkret — itu step berikutnya.
+- Python 3.13, sync SQLAlchemy 2.0 + psycopg2. Run via venv: `python -m venv .venv`,
+  aktifkan, lalu `pip install -r requirements.txt`.
 
 ## Tech Stack
 - **Backend**: Python, FastAPI
@@ -69,11 +72,12 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
 - Pattern integrasi platform baru: OAuth handler -> token refresh -> API client wrapper
   -> worker task (detail di skill `platform-api-integration`).
 
-## Commands (target — perlu scaffolding dulu)
-- `uvicorn api.main:app --reload` — jalankan backend API secara lokal
-- `celery -A workers.celery_app worker --loglevel=info` — jalankan worker
-- `alembic upgrade head` — jalankan migration DB
-- `npm run dev` (di folder `/frontend`) — jalankan frontend
+## Commands (dari root repo, use venv python)
+- `.venv\Scripts\python -m uvicorn api.main:app --reload` — backend API lokal (Windows)
+- `.venv\Scripts\python -m celery -A workers.celery_app worker --loglevel=info` — worker
+- `.venv\Scripts\python -m alembic upgrade head` — jalankan migration DB (butuh Postgres)
+- `.venv\Scripts\python -m alembic upgrade head --sql` — verifikasi migration tanpa DB
+- `npm run dev` (di folder `/frontend`) — jalankan frontend (setelah di-scaffold)
 
 ## Testing
 - Backend: pytest, mock semua panggilan API eksternal (jangan hit API asli di test)
