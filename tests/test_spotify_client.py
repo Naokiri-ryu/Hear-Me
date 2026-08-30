@@ -62,8 +62,8 @@ def test_get_playlist_parses_internal_schema(monkeypatch):
                     "track": {
                         "id": "t1",
                         "name": "Song One",
-                        "artists": [{"name": "Artist A"}, {"name": "Artist B"}],
-                        "album": {"name": "Album X"},
+                        "artists": [{"id": "a1", "name": "Artist A"}, {"id": "a2", "name": "Artist B"}],
+                        "album": {"name": "Album X", "release_date": "2024-05-20"},
                         "duration_ms": 180000,
                         "external_ids": {"isrc": "USABC1234567"},
                     }
@@ -88,8 +88,48 @@ def test_get_playlist_parses_internal_schema(monkeypatch):
             "track_id": "t1",
             "title": "Song One",
             "artist": "Artist A, Artist B",
+            "artist_ids": ["a1", "a2"],
             "album": "Album X",
+            "release_date": "2024-05-20",
             "duration_ms": 180000,
             "isrc": "USABC1234567",
         }
     ]
+
+
+def test_get_artists_maps_id_to_genres(monkeypatch):
+    class FakeClient(SpotifyClient):
+        def __init__(self):
+            super().__init__(object(), object())
+
+        def _request(self, method, path, params=None):
+            assert path == "/artists"
+            ids = params["ids"].split(",")
+            artists = []
+            for aid in ids:
+                if aid == "a1":
+                    artists.append({"id": "a1", "genres": ["rock", "indie"]})
+                elif aid == "a2":
+                    artists.append({"id": "a2", "genres": ["jazz"]})
+            return {"artists": artists}
+
+    genres = FakeClient().get_artists(["a1", "a2", "a1"])
+    assert genres == {"a1": ["rock", "indie"], "a2": ["jazz"]}
+
+
+def test_get_artists_chunks_into_50_per_request(monkeypatch):
+    seen = []
+
+    class FakeClient(SpotifyClient):
+        def __init__(self):
+            super().__init__(object(), object())
+
+        def _request(self, method, path, params=None):
+            ids = params["ids"].split(",")
+            seen.append(len(ids))
+            return {"artists": [{"id": i, "genres": ["x"]} for i in ids]}
+
+    ids = [f"id{i}" for i in range(100)]
+    genres = FakeClient().get_artists(ids)
+    assert seen == [50, 50]
+    assert len(genres) == 100

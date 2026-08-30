@@ -6,14 +6,18 @@ from api.db import get_db
 from api.dependencies import get_current_user
 from api.schemas.playlist import (
     PlaylistCreate,
+    PlaylistGroupOut,
+    PlaylistGroupRequest,
     PlaylistOut,
     PlaylistSortRequest,
     PlaylistSummary,
     TaskAccepted,
+    playlist_group_to_out,
     playlist_to_out,
     playlist_to_summary,
 )
 from models.playlist import Playlist
+from models.playlist_group import PlaylistGroup
 from models.playlist_track import PlaylistTrack
 from models.user import User
 from workers.celery_app import celery_app
@@ -144,3 +148,35 @@ def enrich_playlist(
         args=[current_user.id, playlist_id],
     )
     return TaskAccepted(task_id=task.id)
+
+
+@router.post("/{playlist_id}/group", response_model=TaskAccepted, status_code=status.HTTP_202_ACCEPTED)
+def group_playlist(
+    playlist_id: int,
+    payload: PlaylistGroupRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TaskAccepted:
+    """Queue a rule-based grouping run (genre/artist/album/decade)."""
+    _get_owned_playlist(db, current_user.id, playlist_id)
+    task = celery_app.send_task(
+        "workers.group_playlist",
+        args=[current_user.id, playlist_id, payload.sort_by],
+    )
+    return TaskAccepted(task_id=task.id)
+
+
+@router.get("/{playlist_id}/groups", response_model=list[PlaylistGroupOut])
+def list_playlist_groups(
+    playlist_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[PlaylistGroupOut]:
+    """Latest stored grouping snapshots (for the dashboard), newest first."""
+    _get_owned_playlist(db, current_user.id, playlist_id)
+    rows = db.scalars(
+        select(PlaylistGroup)
+        .where(PlaylistGroup.playlist_id == playlist_id)
+        .order_by(PlaylistGroup.created_at.desc(), PlaylistGroup.id.desc())
+    ).all()
+    return [playlist_group_to_out(g) for g in rows]

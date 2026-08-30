@@ -13,6 +13,7 @@ _MAX_RETRIES = 3
 _TIMEOUT_SECONDS = 30
 _PAGE_LIMIT = 50
 _MAX_PAGES = 50
+_ARTISTS_PER_REQUEST = 50
 
 
 class SpotifyClientError(Exception):
@@ -135,13 +136,17 @@ class SpotifyClient:
                 track = entry.get("track")
                 if track is None:
                     continue  # unavailable episode/track
-                artists = ", ".join(a.get("name", "") for a in track.get("artists", []))
+                artists = track.get("artists", [])
+                artist_names = ", ".join(a.get("name", "") for a in artists)
                 items.append(
                     {
                         "track_id": track.get("id"),
                         "title": track.get("name"),
-                        "artist": artists,
+                        "artist": artist_names,
+                        # genre metadata comes from artist data -> /artists
+                        "artist_ids": [a.get("id") for a in artists if a.get("id")],
                         "album": (track.get("album") or {}).get("name"),
+                        "release_date": (track.get("album") or {}).get("release_date"),
                         "duration_ms": track.get("duration_ms"),
                         "isrc": (track.get("external_ids") or {}).get("isrc"),
                     }
@@ -150,3 +155,22 @@ class SpotifyClient:
             if len(tracks.get("items", [])) < _PAGE_LIMIT:
                 break
         return {**meta, "tracks": items}
+
+    def get_artists(self, artist_ids: list[str]) -> dict[str, list[str]]:
+        """Map artist id -> list of genre strings (rule-based genre auto-sort).
+
+        Uses the /artists endpoint (max 50 ids per request). Artist genres are the
+        ONLY supported genre source: /audio-features & /audio-analysis are
+        permanently deprecated for new apps (403), never call them.
+        """
+        genres_by_artist: dict[str, list[str]] = {}
+        unique_ids = list(dict.fromkeys(i for i in artist_ids if i))
+        for i in range(0, len(unique_ids), _ARTISTS_PER_REQUEST):
+            chunk = unique_ids[i : i + _ARTISTS_PER_REQUEST]
+            resp = self._request("GET", "/artists", {"ids": ",".join(chunk)})
+            for artist in resp.get("artists", []):
+                if artist is None:
+                    continue
+                genres = [g for g in artist.get("genres", []) if g]
+                genres_by_artist[artist.get("id")] = genres
+        return genres_by_artist

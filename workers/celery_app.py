@@ -11,6 +11,7 @@ celery_app = Celery(
         "workers.tasks.spotify",
         "workers.tasks.sort_playlist",
         "workers.tasks.enrich_playlist",
+        "workers.tasks.group_playlist",
     ],
 )
 

@@ -46,8 +46,13 @@ supaya konsisten dan gampang di-maintain.
 - [ ] Ada test dengan mock API (tidak hit API asli di test suite)
 
 ## Status API per platform (update kalau berubah)
-- Spotify: resmi, stabil. Audio-features endpoint sempat dideprecate — verifikasi
-  ketersediaan sebelum dipakai.
+- Spotify: resmi, stabil untuk `/artists`, `/playlists`, search, dll. **Endpoints
+  `/audio-features`, `/audio-analysis`, dan `/recommendations` DIPRECAT PERMANEN untuk
+  app baru sejak 27 Nov 2024 dan return 403. Tidak ada workaround — jangan pernah
+  memanggilnya, jangan pernah mengasumsikan data danceability/energy/valence/tempo
+  tersedia, dan jangan rebuild fitur yang bergantung pada data itu.** Satu-satunya
+  sumber genre yang sah adalah `/artists` (artist-level genres); data mood/tonal
+  TIDAK tersedia dari Spotify.
 - Apple Music: resmi (MusicKit), butuh Apple Developer Program + JWT dari private key.
 - YT Music: TIDAK resmi (mis. ytmusicapi) — rawan patah, isolasi errornya.
 - SoundCloud: resmi tapi butuh approval khusus, akses terbatas.

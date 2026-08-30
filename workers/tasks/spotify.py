@@ -1,3 +1,4 @@
+from celery.utils.log import get_task_logger
 from sqlalchemy import delete, select
 
 from api.clients.spotify_client import SpotifyClient, SpotifyClientError
@@ -9,6 +10,27 @@ from models.track import Track
 from workers.celery_app import celery_app
 
 _PLATFORM = "spotify"
+
+logger = get_task_logger(__name__)
+
+
+def _parse_release_year(release_date: str | None) -> int | None:
+    if not release_date or len(release_date) < 4:
+        return None
+    head = release_date[:4]
+    return int(head) if head.isdigit() else None
+
+
+def _union_artist_genres(
+    artist_ids: list[str], genres_by_artist: dict[str, list[str]]
+) -> list[str] | None:
+    """Union of genres across the track's artists (multi-artist = multi-genre)."""
+    seen: list[str] = []
+    for aid in artist_ids:
+        for genre in genres_by_artist.get(aid, []):
+            if genre not in seen:
+                seen.append(genre)
+    return seen or None
 
 
 def _find_track(db, entry: dict) -> Track | None:
@@ -44,6 +66,20 @@ def fetch_spotify_playlist(
     try:
         data = SpotifyClient(credential, db).get_playlist(spotify_playlist_id)
 
+        # Genre auto-sort needs artist-level genres (only source: /artists).
+        # Isolated: if genre metadata fails, the playlist sync must NOT fail.
+        genres_by_artist: dict[str, list[str]] = {}
+        try:
+            artist_ids = [
+                aid
+                for entry in data["tracks"]
+                for aid in entry.get("artist_ids", [])
+            ]
+            if artist_ids:
+                genres_by_artist = SpotifyClient(credential, db).get_artists(artist_ids)
+        except SpotifyClientError as exc:
+            logger.warning("fetch_spotify_playlist artist genres skipped: %s", exc)
+
         playlist = db.scalar(
             select(Playlist).where(
                 Playlist.user_id == user_id,
@@ -77,6 +113,10 @@ def fetch_spotify_playlist(
                 )
                 db.add(track)
                 db.flush()
+            track.genres = _union_artist_genres(entry.get("artist_ids", []), genres_by_artist)
+            year = _parse_release_year(entry.get("release_date"))
+            if year is not None:
+                track.release_year = year
             db.add(PlaylistTrack(playlist_id=playlist.id, track_id=track.id, position=position))
 
         db.commit()

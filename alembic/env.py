@@ -14,6 +14,7 @@ import models.playlist  # noqa: E402,F401
 import models.track  # noqa: E402,F401
 import models.playlist_track  # noqa: E402,F401
 import models.platform_credential  # noqa: E402,F401
+import models.playlist_group  # noqa: E402,F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)

@@ -18,21 +18,27 @@ FAKE_PLAYLIST = {
         {
             "track_id": "st1",
             "title": "Song One",
-            "artist": "Artist A",
+            "artist": "Artist A, Artist B",
+            "artist_ids": ["a1", "a2"],
             "album": "Album X",
+            "release_date": "2024-05-20",
             "duration_ms": 180000,
             "isrc": "USABC1234567",
         },
         {
             "track_id": "st2",
             "title": "Song Two",
-            "artist": "Artist B",
+            "artist": "Artist C",
+            "artist_ids": ["a3"],
             "album": "Album Y",
+            "release_date": "1998-01-31",
             "duration_ms": 200000,
             "isrc": None,
         },
     ],
 }
+
+FAKE_ARTIST_GENRES = {"a1": ["rock", "indie"], "a2": ["synth-pop"], "a3": ["jazz"]}
 
 
 def _seed_user_and_credential(task_factory):
@@ -63,6 +69,11 @@ def test_fetch_spotify_playlist_idempotent(db_session, dbfactory, eager, monkeyp
     user_id = _seed_user_and_credential(dbfactory)
     monkeypatch.setattr(spotify_tasks, "SessionLocal", dbfactory)
     monkeypatch.setattr(client_module.SpotifyClient, "get_playlist", lambda self, pid: FAKE_PLAYLIST)
+    monkeypatch.setattr(
+        client_module.SpotifyClient,
+        "get_artists",
+        lambda self, ids: FAKE_ARTIST_GENRES,
+    )
 
     first = spotify_tasks.fetch_spotify_playlist(user_id, "spotify-pl-1")
     assert first["tracks"] == 2
@@ -79,6 +90,12 @@ def test_fetch_spotify_playlist_idempotent(db_session, dbfactory, eager, monkeyp
 
         tracks = session.scalars(select(Track)).all()
         assert len(tracks) == 2
+        by_title = {t.title: t for t in tracks}
+        # genre = union across the track's artists (multi-artist, multi-genre)
+        assert set(by_title["Song One"].genres) == {"rock", "indie", "synth-pop"}
+        assert by_title["Song Two"].genres == ["jazz"]
+        assert by_title["Song One"].release_year == 2024
+        assert by_title["Song Two"].release_year == 1998
 
         links = session.scalars(
             select(PlaylistTrack)

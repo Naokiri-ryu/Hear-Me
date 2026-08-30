@@ -8,9 +8,15 @@ lagu/album/artist.
 ## Repo State
 - Scaffold aktif: `/api` (FastAPI: auth register/login JWT, Spotify OAuth handler,
   Spotify client), `/workers` (Celery: `workers.ping`, `workers.fetch_spotify_playlist`
-  idempotent), `/models` (SQLAlchemy), `alembic/` (users, playlists, tracks,
-  playlist_tracks, platform_credentials), `tests/` (pytest, 17 tes mock), `/frontend`
-  (placeholder).
+  idempotent, `workers.sort_playlist` reorder, `workers.group_playlist` auto-sort
+  grouping), `/models` (SQLAlchemy), `alembic/` (users, playlists, tracks,
+  playlist_tracks, platform_credentials, playlist_groups), `tests/` (pytest, semua
+  panggilan API eksternal di-mock), `/frontend`.
+- Auto-sort playlist rule-based sudah live: `workers.group_playlist` grouping per
+  **genre** (union genre semua artist track, dari endpoint `/artists`), **artist**
+  (artist pertama), **album**, dan **decade** (dari `release_date` album), snapshot
+  disimpan di tabel `playlist_groups` (map kategori -> list track_id) untuk dashboard.
+  Endpoint: `POST /playlists/{id}/group` + `GET /playlists/{id}/groups`.
 - Token Spotify disimpan ENCRYPTED (Fernet) di `platform_credentials` — jangan pernah
   menaruh plaintext. Refresh token + rotate otomatis ada di `api/clients/spotify_client.py`
   (refresh-before-expiry, rate-limit dari config, retry exponential backoff).
@@ -55,9 +61,12 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
   `platform-api-integration`) sebelum menambah/mengubah/men-debug integrasi platform
   musik apa pun. Pattern baku: OAuth handler -> token refresh -> API client wrapper ->
   worker task.
-- **Spotify**: API resmi, paling stabil. Audio features endpoint
-  (danceability/energy/valence) sempat dideprecate untuk app baru — cek ketersediaan
-  sebelum dipakai untuk fitur auto-sort.
+- **Spotify**: API resmi, paling stabil untuk `/artists`, `/playlists`, search, dll.
+  **PENTING — endpoint `/audio-features`, `/audio-analysis`, dan `/recommendations`
+  dideprecate PERMANEN untuk app baru sejak 27 Nov 2024 dan return 403. TIDAK ada
+  workaround; jangan pernah memanggilnya atau mengasumsikan danceability/energy/
+  valence/tempo tersedia.** Genre untuk auto-sort hanya dari endpoint `/artists`
+  (artist-level genres); data "mood"/tonal TIDAK tersedia dari Spotify.
 - **Apple Music**: MusicKit API, butuh Apple Developer Program (berbayar), auth pakai
   JWT dari private key.
 - **YouTube Music**: TIDAK ada API resmi. Kalau dipakai, pakai library unofficial

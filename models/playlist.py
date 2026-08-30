@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 if TYPE_CHECKING:
+    from models.playlist_group import PlaylistGroup
     from models.playlist_track import PlaylistTrack
     from models.user import User
 
@@ -27,3 +28,6 @@ class Playlist(Base):
 
     user: Mapped["User"] = relationship(back_populates="playlists")
     tracks: Mapped[list["PlaylistTrack"]] = relationship(back_populates="playlist")
+    groups: Mapped[list["PlaylistGroup"]] = relationship(
+        back_populates="playlist", cascade="all, delete-orphan"
+    )

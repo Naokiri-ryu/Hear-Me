@@ -35,14 +35,14 @@ background-image for decoration only — stop, that's the pattern this skill exi
 Replace ALL existing tokens in `frontend/app/globals.css` with these:
 
 ```css
---color-canvas: #0a0a0c;       /* page background */
---color-surface: #17171a;      /* card fills */
---color-surface-2: #1e1e22;    /* input backgrounds, subtle lift */
---color-border: #2b2b30;       /* primary 1px hairline border */
---color-border-strong: #444448;/* emphasis border */
---color-ink: #f2f2f0;          /* primary text */
---color-muted: #8f8f96;        /* secondary text, placeholders */
---color-accent: #d9a441;       /* single chromatic accent — "vinyl gold". Used for
+--color-canvas: #0a0a0c; /* page background */
+--color-surface: #17171a; /* card fills */
+--color-surface-2: #1e1e22; /* input backgrounds, subtle lift */
+--color-border: #2b2b30; /* primary 1px hairline border */
+--color-border-strong: #444448; /* emphasis border */
+--color-ink: #f2f2f0; /* primary text */
+--color-muted: #8f8f96; /* secondary text, placeholders */
+--color-accent: #d9a441; /* single chromatic accent — "vinyl gold". Used for
                                    primary CTA fill, links, and active states ONLY */
 --color-danger: #e5484d;
 ```
@@ -69,6 +69,16 @@ Two type families, strict role separation:
 - Elevation: 1px solid `--color-border` only. No box-shadow anywhere except
   `focus-visible` outlines.
 - Section gap: 80-100px between major page sections. Card padding: 20-24px.
+
+## Font loading (required — do not skip)
+
+Declaring a font name in `--font-sans` / `--font-display` does NOT load it. Every font
+referenced in `globals.css` MUST actually be loaded via `next/font/google` (self-hosted
+by Next.js at build time — do not use a manual `<link>` to Google Fonts, and do not
+assume a font is available just because it's a common name like "Inter"). Wire the
+loaded font's CSS variable into `<html>`/`<body>` in `app/layout.tsx`. If a font fails
+to load for any reason, the silent fallback (system serif/sans) is a broken build, not
+an acceptable degradation — treat it as an error to fix, not ship.
 
 ## Component patterns
 
