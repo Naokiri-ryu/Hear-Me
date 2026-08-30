@@ -1,6 +1,12 @@
 from functools import lru_cache
+from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+AppEnv = Literal["development", "production"]
+
+_PLACEHOLDER_KEYS = {"", "change-me", "changeme"}
 
 
 class Settings(BaseSettings):
@@ -8,11 +14,17 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "Hear-Me API"
     VERSION: str = "0.1.0"
+    ENV: AppEnv = "development"
 
     DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/hear_me"
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # JWT signing key (HS256). Must be >= 32 bytes. Never reuse for encryption.
     SECRET_KEY: str = "change-me"
+    # Fernet key for encrypting stored platform tokens. MUST be separate from
+    # SECRET_KEY (never derive one from the other) and >= 32 bytes, else the
+    # derived key material is weak.
+    TOKEN_ENCRYPTION_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     SPOTIFY_CLIENT_ID: str = ""
@@ -24,6 +36,18 @@ class Settings(BaseSettings):
 
     MUSICBRAINZ_API_BASE: str = "https://musicbrainz.org/ws/2"
     MUSICBRAINZ_REQUEST_INTERVAL_SECONDS: float = 1.0
+
+    @model_validator(mode="after")
+    def validate_production_keys(self) -> "Settings":
+        if self.ENV != "production":
+            return self
+        for name in ("SECRET_KEY", "TOKEN_ENCRYPTION_KEY"):
+            value = getattr(self, name)
+            if value in _PLACEHOLDER_KEYS or len(value) < 32:
+                raise ValueError(
+                    f"{name} must be >= 32 bytes and not a placeholder when ENV=production"
+                )
+        return self
 
 
 @lru_cache

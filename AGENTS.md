@@ -36,6 +36,12 @@ intra-playlist auto-sort over breadth of platform support or feature parity with
 - Token Spotify disimpan ENCRYPTED (Fernet) di `platform_credentials` — jangan pernah
   menaruh plaintext. Refresh token + rotate otomatis ada di `api/clients/spotify_client.py`
   (refresh-before-expiry, rate-limit dari config, retry exponential backoff).
+- **Gotcha security keys**: `SECRET_KEY` (JWT HS256) dan `TOKEN_ENCRYPTION_KEY` (Fernet
+  untuk enkripsi token platform) WAJIB terpisah — jangan pernah derive satu dari yang
+  lain. Keduanya harus >= 32 byte. Field `ENV` di `api/config.py` mengontrol validasi:
+  kalau `ENV=production` dan salah satu key masih placeholder (`change-me`) atau < 32
+  byte, app GAGAL start (ValueError di import), bukan warning. Dev (`ENV=development`)
+  boleh pakai default.
 - Client hanya butuh `SPOTIFY_CLIENT_ID/SECRET` (di `.env`) untuk dipakai live; tanpa itu,
   `/auth/spotify/login` balas 503 dan semua tes jalan via mock.
 - Python 3.13, sync SQLAlchemy 2.0 + psycopg2. Setup: `python -m venv .venv`, aktifkan,

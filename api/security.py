@@ -11,8 +11,9 @@ from api.config import settings
 _JWT_ALGORITHM = "HS256"
 
 
-def _fernet_key() -> bytes:
-    digest = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+def _fernet_key(source: str | None = None) -> bytes:
+    key_material = source if source is not None else settings.TOKEN_ENCRYPTION_KEY
+    digest = hashlib.sha256(key_material.encode()).digest()
     return base64.urlsafe_b64encode(digest)
 
 
