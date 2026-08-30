@@ -46,7 +46,7 @@ export default function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
-          className="h-11 rounded-xl border border-line-2 bg-night-2 px-4 text-sm text-ink placeholder:text-faint outline-none transition-colors focus:border-violet focus:ring-2 focus:ring-violet/30"
+          className="h-11 rounded-[10px] border border-border bg-surface-2 px-4 text-sm text-ink placeholder:text-muted outline-none transition-colors focus:border-border-strong"
         />
       </div>
 
@@ -63,14 +63,14 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="••••••••"
-          className="h-11 rounded-xl border border-line-2 bg-night-2 px-4 text-sm text-ink placeholder:text-faint outline-none transition-colors focus:border-violet focus:ring-2 focus:ring-violet/30"
+          className="h-11 rounded-[10px] border border-border bg-surface-2 px-4 text-sm text-ink placeholder:text-muted outline-none transition-colors focus:border-border-strong"
         />
       </div>
 
       {error ? (
         <p
           role="alert"
-          className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+          className="rounded-[10px] border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
         >
           {error}
         </p>
@@ -79,7 +79,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-r from-violet to-fuchsia text-sm font-semibold text-white shadow-[0_0_28px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_0_40px_rgba(232,121,249,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-1 inline-flex h-11 items-center justify-center rounded-[10px] bg-accent text-sm font-medium text-canvas transition-colors hover:bg-[#e6b34f] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Log in"}
       </button>

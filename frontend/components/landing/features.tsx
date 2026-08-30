@@ -9,7 +9,7 @@ const FEATURES = [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
@@ -31,7 +31,7 @@ const FEATURES = [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
@@ -55,7 +55,7 @@ const FEATURES = [
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="1.25"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
@@ -72,29 +72,28 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section className="relative border-t border-line/60 bg-night-2">
-      <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+    <section className="border-t border-border">
+      <div className="mx-auto w-full max-w-6xl px-5 py-24 sm:px-8 sm:py-28">
+        <div className="max-w-xl">
+          <h2 className="font-display text-3xl font-light tracking-tight text-ink sm:text-4xl">
             One home for your whole library
           </h2>
-          <p className="mt-3 text-pretty text-muted">
+          <p className="mt-4 text-pretty text-muted">
             Stop juggling apps. Hear-Me brings your playlists together, then
             takes care of the organizing.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-4 sm:grid-cols-3 sm:gap-5">
+        <div className="mt-14 grid gap-5 sm:grid-cols-3">
           {FEATURES.map((feature) => (
             <article
               key={feature.title}
-              className="group relative overflow-hidden rounded-2xl border border-line bg-surface p-6 transition-all hover:border-line-2 hover:bg-surface-2"
+              className="rounded-[10px] border border-border bg-surface p-6"
             >
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-violet/10 blur-2xl transition-opacity opacity-0 group-hover:opacity-100" />
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-line-2 bg-surface-2 text-violet">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-[10px] border border-border bg-surface-2 text-ink">
                 {feature.icon}
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-ink">
+              <h3 className="mt-5 text-base font-medium text-ink">
                 {feature.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">
