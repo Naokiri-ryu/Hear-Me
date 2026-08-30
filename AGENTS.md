@@ -1,11 +1,27 @@
 # AGENTS.md
 
 ## Project Overview
+
 Music management app: cross-platform playlist transfer (Spotify, Apple Music, YT Music,
 SoundCloud) + auto-sort playlist (genre/artist/album/mood) + music discovery + info
 lagu/album/artist.
 
+## Competitive Positioning (why we prioritize what we prioritize)
+
+Tune My Music (tunemymusic.com) is the dominant incumbent: official API partnerships
+with 20+ platforms, auto-sync, AI playlist generator, universal share links, and a
+"Playlist Organizer" feature. We cannot out-build their platform breadth (they have
+partnership-level API access individuals cannot get) or their sync infrastructure —
+do not treat "support every platform" as the priority.
+
+Their "Playlist Organizer" is bulk-delete/unfollow of WHOLE playlists — it does NOT
+split the tracks INSIDE one large playlist into sub-categories. That gap (auto-sorting
+a single 1000+ track playlist by genre/artist/album/decade) is unaddressed by them and
+is Hear-Me's actual differentiator and founding motivation. Prioritize depth on
+intra-playlist auto-sort over breadth of platform support or feature parity with them.
+
 ## Repo State
+
 - Scaffold aktif: `/api` (FastAPI: auth register/login JWT, Spotify OAuth handler,
   Spotify client), `/workers` (Celery: `workers.ping`, `workers.fetch_spotify_playlist`
   idempotent, `workers.sort_playlist` reorder, `workers.group_playlist` auto-sort
@@ -26,6 +42,7 @@ lagu/album/artist.
   `pip install -r requirements-dev.txt`.
 
 ## Tech Stack
+
 - **Backend**: Python, FastAPI
 - **Job Queue / Worker**: Celery + Redis (untuk sync playlist async, jangan pernah sync
   secara synchronous di HTTP request)
@@ -36,6 +53,7 @@ lagu/album/artist.
 - **Mobile (nanti)**: React Native/Expo, share logic dengan web
 
 ## Architecture
+
 ```
 Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worker(s)
                               |                                              |
@@ -57,6 +75,7 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
   implement retry dengan exponential backoff.
 
 ## Platform Integrations
+
 - **WAJIB baca** `.opencode/skills/platform-api-integration/SKILL.md` (skill
   `platform-api-integration`) sebelum menambah/mengubah/men-debug integrasi platform
   musik apa pun. Pattern baku: OAuth handler -> token refresh -> API client wrapper ->
@@ -78,6 +97,7 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
 - **Genius**: lirik & anotasi — jangan reproduksi lirik penuh (hak cipta), metadata boleh.
 
 ## Conventions
+
 - Struktur folder: `/api` (FastAPI app; auth & clients di subfolder), `/workers` (Celery
   tasks), `/models` (DB models/schema), `/frontend`.
 - Penamaan tabel: snake_case, plural (`users`, `playlists`, `tracks`,
@@ -88,6 +108,7 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
   -> worker task (detail di skill `platform-api-integration`).
 
 ## Commands (dari root repo, use venv python)
+
 - `.venv\Scripts\python -m uvicorn api.main:app --reload` — backend API lokal (Windows)
 - `.venv\Scripts\python -m celery -A workers.celery_app worker --loglevel=info` — worker
 - `.venv\Scripts\python -m alembic upgrade head` — jalankan migration DB (butuh Postgres)
@@ -96,6 +117,7 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
 - `npm run dev` (di folder `/frontend`) — jalankan frontend (setelah di-scaffold)
 
 ## Testing
+
 - Backend: pytest + TestClient, semua panggilan API eksternal di-mock
   (`tests/test_spotify_client.py`, `test_spotify_oauth.py`).
 - Worker: task dijalankan eager mode (`task_always_eager`) dengan `SessionLocal`

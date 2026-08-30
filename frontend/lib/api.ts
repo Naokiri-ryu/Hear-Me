@@ -36,6 +36,27 @@ export function getToken(): string | null {
   return window.localStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
+export function clearToken(): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+export interface TokenPayload {
+  sub?: string;
+  exp?: number;
+}
+
+export function decodeToken(token: string): TokenPayload | null {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const json = atob(part.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(json) as TokenPayload;
+  } catch {
+    return null;
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -78,5 +99,13 @@ export async function register(input: RegisterInput): Promise<UserOut> {
   return request<UserOut>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+export async function getMe(): Promise<UserOut> {
+  const token = getToken();
+  return request<UserOut>("/api/auth/me", {
+    method: "GET",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 }

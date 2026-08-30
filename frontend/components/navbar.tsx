@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthNavActions from "@/components/auth-nav-actions";
 
 export function WaveformMark() {
   return (
@@ -23,18 +24,7 @@ export default function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden rounded-[10px] border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-border-strong hover:text-white sm:inline-flex"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/register"
-            className="inline-flex rounded-[10px] border border-border bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-border-strong hover:bg-surface-2"
-          >
-            Get started
-          </Link>
+          <AuthNavActions />
         </div>
       </nav>
     </header>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, login, saveToken } from "@/lib/api";
+import { AUTH_EVENT } from "@/lib/use-auth";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -18,7 +19,8 @@ export default function LoginForm() {
     try {
       const token = await login(email, password);
       saveToken(token.access_token);
-      router.push("/");
+      window.dispatchEvent(new Event(AUTH_EVENT));
+      router.push("/me");
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
