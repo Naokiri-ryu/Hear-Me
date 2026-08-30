@@ -6,12 +6,18 @@ SoundCloud) + auto-sort playlist (genre/artist/album/mood) + music discovery + i
 lagu/album/artist.
 
 ## Repo State
-- Scaffold dasar sudah ada: `/api` (FastAPI), `/workers` (Celery), `/models` (SQLAlchemy),
-  `alembic/` (migration awal: users, playlists, tracks, playlist_tracks,
-  platform_credentials), `/frontend` (placeholder saja).
-- Belum ada implementasi platform API / OAuth / Celery task konkret — itu step berikutnya.
-- Python 3.13, sync SQLAlchemy 2.0 + psycopg2. Run via venv: `python -m venv .venv`,
-  aktifkan, lalu `pip install -r requirements.txt`.
+- Scaffold aktif: `/api` (FastAPI: auth register/login JWT, Spotify OAuth handler,
+  Spotify client), `/workers` (Celery: `workers.ping`, `workers.fetch_spotify_playlist`
+  idempotent), `/models` (SQLAlchemy), `alembic/` (users, playlists, tracks,
+  playlist_tracks, platform_credentials), `tests/` (pytest, 17 tes mock), `/frontend`
+  (placeholder).
+- Token Spotify disimpan ENCRYPTED (Fernet) di `platform_credentials` — jangan pernah
+  menaruh plaintext. Refresh token + rotate otomatis ada di `api/clients/spotify_client.py`
+  (refresh-before-expiry, rate-limit dari config, retry exponential backoff).
+- Client hanya butuh `SPOTIFY_CLIENT_ID/SECRET` (di `.env`) untuk dipakai live; tanpa itu,
+  `/auth/spotify/login` balas 503 dan semua tes jalan via mock.
+- Python 3.13, sync SQLAlchemy 2.0 + psycopg2. Setup: `python -m venv .venv`, aktifkan,
+  `pip install -r requirements-dev.txt`.
 
 ## Tech Stack
 - **Backend**: Python, FastAPI
@@ -77,9 +83,13 @@ Frontend (Next.js) -> Backend API (FastAPI) -> Job Queue (Celery/Redis) -> Worke
 - `.venv\Scripts\python -m celery -A workers.celery_app worker --loglevel=info` — worker
 - `.venv\Scripts\python -m alembic upgrade head` — jalankan migration DB (butuh Postgres)
 - `.venv\Scripts\python -m alembic upgrade head --sql` — verifikasi migration tanpa DB
+- `.venv\Scripts\python -m pytest -q` — test suite (harus hijau di tiap perubahan backend)
 - `npm run dev` (di folder `/frontend`) — jalankan frontend (setelah di-scaffold)
 
 ## Testing
-- Backend: pytest, mock semua panggilan API eksternal (jangan hit API asli di test)
-- Worker: test task Celery secara eager mode
-- Frontend: (isi sesuai testing framework yang dipilih nanti — belum ditentukan)
+- Backend: pytest + TestClient, semua panggilan API eksternal di-mock
+  (`tests/test_spotify_client.py`, `test_spotify_oauth.py`).
+- Worker: task dijalankan eager mode (`task_always_eager`) dengan `SessionLocal`
+  di-monkeypunch ke SQLite in-memory (`tests/test_spotify_task.py`).
+- DB test pakai SQLite in-memory (StaticPool), bukan Postgres — jangan ubah ini tanpa
+  alasan jelas.

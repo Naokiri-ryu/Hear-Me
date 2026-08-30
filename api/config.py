@@ -13,6 +13,17 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     SECRET_KEY: str = "change-me"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    SPOTIFY_CLIENT_ID: str = ""
+    SPOTIFY_CLIENT_SECRET: str = ""
+    SPOTIFY_REDIRECT_URI: str = "http://localhost:8000/api/auth/spotify/callback"
+    SPOTIFY_API_BASE: str = "https://api.spotify.com/v1"
+    SPOTIFY_ACCOUNTS_BASE: str = "https://accounts.spotify.com"
+    SPOTIFY_MAX_REQUESTS_PER_MINUTE: int = 3000
+
+    MUSICBRAINZ_API_BASE: str = "https://musicbrainz.org/ws/2"
+    MUSICBRAINZ_REQUEST_INTERVAL_SECONDS: float = 1.0
 
 
 @lru_cache

@@ -6,7 +6,12 @@ celery_app = Celery(
     "hear_me",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["workers.tasks"],
+    include=[
+        "workers.tasks.ping",
+        "workers.tasks.spotify",
+        "workers.tasks.sort_playlist",
+        "workers.tasks.enrich_playlist",
+    ],
 )
 
 celery_app.conf.update(
