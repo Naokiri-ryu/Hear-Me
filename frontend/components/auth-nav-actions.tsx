@@ -22,6 +22,12 @@ export default function AuthNavActions() {
     return (
       <>
         <Link
+          href="/dashboard"
+          className="inline-flex rounded-[10px] border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-border-strong hover:bg-surface-2"
+        >
+          Dashboard
+        </Link>
+        <Link
           href="/me"
           className="inline-flex max-w-[160px] items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap rounded-[10px] border border-border bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-border-strong hover:bg-surface-2"
         >

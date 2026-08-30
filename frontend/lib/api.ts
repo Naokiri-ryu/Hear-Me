@@ -58,9 +58,14 @@ export function decodeToken(token: string): TokenPayload | null {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getToken();
   const response = await fetch(path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {
@@ -74,6 +79,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       // Non-JSON error body (e.g. backend unreachable proxy response).
     }
     throw new ApiError(message, response.status);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return (await response.json()) as T;
@@ -103,9 +112,53 @@ export async function register(input: RegisterInput): Promise<UserOut> {
 }
 
 export async function getMe(): Promise<UserOut> {
-  const token = getToken();
   return request<UserOut>("/api/auth/me", {
     method: "GET",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+}
+
+export interface PlaylistSummary {
+  id: number;
+  name: string;
+  description: string | null;
+  source_platform: string | null;
+  source_playlist_id: string | null;
+  track_count: number;
+}
+
+export type GroupBy = "genre" | "artist" | "album" | "decade";
+
+export interface PlaylistGroup {
+  id: number;
+  playlist_id: number;
+  sort_by: string;
+  groups: Record<string, number[]>;
+  track_count: number;
+  group_count: number;
+  created_at: string;
+}
+
+export async function getPlaylists(): Promise<PlaylistSummary[]> {
+  return request<PlaylistSummary[]>("/api/playlists", { method: "GET" });
+}
+
+export async function getPlaylistGroups(
+  playlistId: number,
+): Promise<PlaylistGroup[]> {
+  return request<PlaylistGroup[]>(`/api/playlists/${playlistId}/groups`, {
+    method: "GET",
+  });
+}
+
+export async function runGrouping(
+  playlistId: number,
+  sortBy: GroupBy,
+): Promise<{ task_id: string; status: string }> {
+  return request<{ task_id: string; status: string }>(
+    `/api/playlists/${playlistId}/group`,
+    {
+      method: "POST",
+      body: JSON.stringify({ sort_by: sortBy }),
+    },
+  );
 }

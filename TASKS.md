@@ -5,23 +5,28 @@ supaya tetap bisa dilacak setelah sesi chat dengan OpenCode berakhir.
 
 ## Urutan prioritas
 
-1. [ ] **Perbaiki SECRET_KEY / TOKEN_ENCRYPTION_KEY**
-   - Pisahkan SECRET_KEY (JWT signing) dan TOKEN_ENCRYPTION_KEY (Fernet di
-     api/security.py) — jangan derive dari key yang sama
-   - Tambahkan field ENV di api/config.py (development/production)
-   - Validasi startup: kalau ENV=production dan salah satu key masih default
-     ("change-me") atau di bawah 32 byte → app harus gagal start, bukan warning
-   - Update .env.example dengan instruksi generate utk masing-masing key
-   - Update test terkait supaya tidak lagi trigger InsecureKeyLengthWarning
-   - Update AGENTS.md gotchas: catat kedua key terpisah dan wajib >=32 byte di prod
+1. [x] **Perbaiki SECRET_KEY / TOKEN_ENCRYPTION_KEY**
+   - Selesai di commit 5d5f22b: TOKEN_ENCRYPTION_KEY terpisah di api/config.py,
+     api/security.py pakai _fernet_key(source) dari TOKEN_ENCRYPTION_KEY, ENV gate
+     production (placeholder/<32 byte → gagal start), .env.example, 5 test baru
+     (roundtrip, produksi), AGENTS.md gotchas. 70 passed. .env lokal sudah ada
+     TOKEN_ENCRYPTION_KEY acak.
 
-2. [ ] **Auth shell (indikator login + /me)**
-   - Backlog dari sesi sebelumnya, belum dikerjakan
+2. [x] **Auth shell (indikator login + /me)**
+   - Selesai di commit 9ad4bd4: lib/api.ts (clearToken/decodeToken/getMe),
+     lib/use-auth.ts (useAuth + AUTH_EVENT), components/auth-nav-actions.tsx,
+     app/me/page.tsx route-guard, login-form redirect /me. live: /, /login,
+     /register, /me semua 200, login proxy 200.
 
-3. [ ] **Dashboard frontend**
-   - Tampilkan playlist Spotify user (dari endpoint yang sudah ada)
-   - Tampilkan hasil grouping dari GET /playlists/{id}/groups
-   - Ikuti skill design-system ("Midnight Editorial")
+3. [x] **Dashboard frontend**
+   - Selesai: route /dashboard (client, auth-guard), daftar playlist dari
+     GET /api/playlists via frontend/lib/api.ts (getPlaylists, getPlaylistGroups,
+     runGrouping; request() kini auto-attach Bearer + handle 204), kartu expandable
+     menampilkan snapshot grouping (tab per sort_by, chip kategori + count + bar
+     netral), kontrol Run auto-sort dengan error handling (Redis down → pesan).
+     Link Dashboard di navbar saat login. Desain ikuti design-system (a11y, satu
+     accent, serif hanya headline, 10px radius). Lint & build bersih, /dashboard
+     live 200. Playlist demo id=2 "Discover Weekly (demo)" dibuat utk verifikasi.
 
 ## Kalau backlog di atas selesai sebelum waktu habis
 
