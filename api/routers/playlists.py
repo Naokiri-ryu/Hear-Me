@@ -25,6 +25,17 @@ from workers.celery_app import celery_app
 router = APIRouter(prefix="/playlists", tags=["playlists"])
 
 
+def _safe_send_task(name: str, args: list | None = None) -> TaskAccepted:
+    try:
+        task = celery_app.send_task(name, args=args or [])
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Job queue unavailable; try again later",
+        )
+    return TaskAccepted(task_id=task.id)
+
+
 def _get_owned_playlist(db: Session, user_id: int, playlist_id: int) -> Playlist:
     playlist = db.scalar(
         select(Playlist)
@@ -114,11 +125,7 @@ def sync_playlist(
             detail=f"Sync for platform '{playlist.source_platform}' not implemented yet",
         )
     # rule (AGENTS.md): bulk external ops go through the job queue, never sync
-    task = celery_app.send_task(
-        "workers.fetch_spotify_playlist",
-        args=[current_user.id, playlist.source_playlist_id],
-    )
-    return TaskAccepted(task_id=task.id)
+    return _safe_send_task("workers.fetch_spotify_playlist", [current_user.id, playlist.source_playlist_id])
 
 
 @router.post("/{playlist_id}/sort", response_model=TaskAccepted, status_code=status.HTTP_202_ACCEPTED)
@@ -129,11 +136,7 @@ def sort_playlist(
     db: Session = Depends(get_db),
 ) -> TaskAccepted:
     _get_owned_playlist(db, current_user.id, playlist_id)
-    task = celery_app.send_task(
-        "workers.sort_playlist",
-        args=[current_user.id, playlist_id, payload.strategy],
-    )
-    return TaskAccepted(task_id=task.id)
+    return _safe_send_task("workers.sort_playlist", [current_user.id, playlist_id, payload.strategy])
 
 
 @router.post("/{playlist_id}/enrich", response_model=TaskAccepted, status_code=status.HTTP_202_ACCEPTED)
@@ -143,11 +146,7 @@ def enrich_playlist(
     db: Session = Depends(get_db),
 ) -> TaskAccepted:
     _get_owned_playlist(db, current_user.id, playlist_id)
-    task = celery_app.send_task(
-        "workers.enrich_playlist",
-        args=[current_user.id, playlist_id],
-    )
-    return TaskAccepted(task_id=task.id)
+    return _safe_send_task("workers.enrich_playlist", [current_user.id, playlist_id])
 
 
 @router.post("/{playlist_id}/group", response_model=TaskAccepted, status_code=status.HTTP_202_ACCEPTED)
@@ -159,11 +158,7 @@ def group_playlist(
 ) -> TaskAccepted:
     """Queue a rule-based grouping run (genre/artist/album/decade)."""
     _get_owned_playlist(db, current_user.id, playlist_id)
-    task = celery_app.send_task(
-        "workers.group_playlist",
-        args=[current_user.id, playlist_id, payload.sort_by],
-    )
-    return TaskAccepted(task_id=task.id)
+    return _safe_send_task("workers.group_playlist", [current_user.id, playlist_id, payload.sort_by])
 
 
 @router.get("/{playlist_id}/groups", response_model=list[PlaylistGroupOut])

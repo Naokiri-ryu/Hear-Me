@@ -165,3 +165,24 @@ def test_enrich_dispatch(client, token, db_session, monkeypatch):
     assert resp.status_code == 202, resp.text
     assert captured["name"] == "workers.enrich_playlist"
     assert resp.json()["task_id"] == "task-3"
+
+
+def test_dispatch_returns_503_when_broker_down(client, token, db_session, monkeypatch):
+    playlist_id = _make_remote_playlist(client, db_session, token, name="BrokerDown")
+    import api.routers.playlists as playlists_mod
+
+    def boom_send_task(name, args=None, **kwargs):
+        raise RuntimeError("Redis connection refused")
+
+    monkeypatch.setattr(playlists_mod.celery_app, "send_task", boom_send_task)
+
+    resp = client.post(f"/playlists/{playlist_id}/sync", headers=_auth_headers(token))
+    assert resp.status_code == 503, resp.text
+    resp = client.post(
+        f"/playlists/{playlist_id}/sort",
+        headers=_auth_headers(token),
+        json={"strategy": "artist"},
+    )
+    assert resp.status_code == 503, resp.text
+    resp = client.post(f"/playlists/{playlist_id}/enrich", headers=_auth_headers(token))
+    assert resp.status_code == 503, resp.text
